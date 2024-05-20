@@ -55,6 +55,44 @@ public class ProductRepositoryImpl implements ProductRepository{
         return products;
     }
 
+    @Override
+    public void update(Product product) {
+        var sql = "UPDATE product SET " +
+                "name = ?, " +
+                "description = ?, " +
+                "price = ?, " +
+                "version = ?, " +
+                "date_last_updated = ? " +
+                "WHERE id = ?";
+
+        try (var connection = dbConnection.tryConnection(); PreparedStatement pstmnt = connection.prepareStatement(sql)) {
+            pstmnt.setString(1, product.getName());
+            pstmnt.setString(2, product.getDescription());
+            pstmnt.setBigDecimal(3, product.getPrice());
+            pstmnt.setLong(4, product.getVersion());
+            pstmnt.setTimestamp(5, Timestamp.valueOf(product.getDateLastUpdated()));
+            pstmnt.setLong(6, product.getId());
+
+            pstmnt.execute();
+            System.out.println("Product info updated successfully");
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to update product info in database", e);
+        }
+    }
+
+    @Override
+    public void delete(Long id) {
+        var sql = "DELETE FROM product WHERE id = ?";
+
+        try (var connection = dbConnection.tryConnection(); PreparedStatement pstmnt = connection.prepareStatement(sql)) {
+            pstmnt.setLong(1, id);
+            pstmnt.execute();
+            System.out.println("Product info deleted successfully");
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to delete product info from database", e);
+        }
+    }
+
     private Product extractProduct(ResultSet resultSet) throws SQLException {
         var product = new Product();
         product.setId(resultSet.getLong("id"));
