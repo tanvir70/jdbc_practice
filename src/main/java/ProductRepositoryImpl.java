@@ -1,8 +1,11 @@
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProductRepositoryImpl implements ProductRepository{
 
@@ -32,6 +35,38 @@ public class ProductRepositoryImpl implements ProductRepository{
             throw new RuntimeException("Unable to insert product info to database", e);
         }
 
+    }
+
+    @Override
+    public List<Product> findAll() {
+        var sql = "SELECT * FROM product";
+        List<Product> products = new ArrayList<>();
+
+        try (var connection = dbConnection.tryConnection(); PreparedStatement pstmnt = connection.prepareStatement(sql)) {
+            var resultSet = pstmnt.executeQuery();
+            while (resultSet.next()) {
+                var product = extractProduct(resultSet);
+                products.add(product);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to retrieve products from database", e);
+        }
+        return products;
+    }
+
+    private Product extractProduct(ResultSet resultSet) throws SQLException {
+        var product = new Product();
+        product.setId(resultSet.getLong("id"));
+        product.setName(resultSet.getString("name"));
+        product.setDescription(resultSet.getString("description"));
+        product.setPrice(resultSet.getBigDecimal("price"));
+        product.setVersion(resultSet.getLong("version"));
+        var dateCreated = resultSet.getTimestamp("date_created").toLocalDateTime();
+        var dateLastUpdated = resultSet.getTimestamp("date_last_updated").toLocalDateTime();
+        product.setDateCreated(dateCreated);
+        product.setDateLastUpdated(dateLastUpdated);
+        return product;
     }
 
     public static void main(String[] args) {
